@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  firstName       String
+  lastName        String
+  dateOfJoining   String
+  dateOfBirth     String
+  gender          String
+  department      String
+  designation     String?
+  email           String?
+  phone           String?
+  emailPersonal   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  birthdayReminders BirthdayReminder[]
+  birthdayWishes    BirthdayWish[]
+  attendance       Attendance[]
+  invoices         Invoice[]
+  leaveRequests    LeaveRequest[]
+  payrolls         Payroll[]
+}
+
+model BirthdayReminder {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  reminderDate String
+  sent        Boolean  @default(false)
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BirthdayWish {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  message     String
+  emailType   String   // 'work', 'personal', 'both'
+  sent        Boolean  @default(false)
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// HR Module Models
+model Attendance {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  date        String   // YYYY-MM-DD format
+  checkIn     String?  // HH:MM format
+  checkOut    String?  // HH:MM format
+  breakHours  Float?   // Break hours in decimal
+  totalHours  Float?   // Total working hours
+  status      String   // 'present', 'absent', 'late', 'half_day', 'leave'
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([employeeId, date])
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  invoiceNumber   String   @unique
+  invoiceDate     String   // YYYY-MM-DD format
+  dueDate         String   // YYYY-MM-DD format
+  amount          Float
+  currency        String   @default("USD")
+  status          String   // 'draft', 'sent', 'paid', 'overdue', 'cancelled'
+  description     String?
+  items           Json     // Array of invoice items
+  taxRate         Float?   // Tax rate in percentage
+  taxAmount       Float?   // Calculated tax amount
+  totalAmount     Float    // Amount + tax
+  paidAmount      Float?   // Amount paid so far
+  balance         Float?   // Remaining balance
+  paymentMethod   String?  // 'cash', 'bank_transfer', 'check', 'credit_card', 'other'
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  leaveType   String   // 'sick', 'vacation', 'personal', 'maternity', 'paternity', 'other'
+  startDate   String   // YYYY-MM-DD format
+  endDate     String   // YYYY-MM-DD format
+  totalDays   Float    // Total number of days
+  reason      String?
+  status      String   // 'pending', 'approved', 'rejected', 'cancelled'
+  approvedBy  String?
+  approvedAt  DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payroll {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  payrollNumber   String   @unique
+  payPeriod       String   // e.g., "2024-01", "2024-01-W1"
+  startDate       String   // YYYY-MM-DD format
+  endDate         String   // YYYY-MM-DD format
+  basicSalary     Float
+  allowances      Float?   // Total allowances
+  deductions     Float?   // Total deductions
+  overtime        Float?   // Overtime hours
+  overtimeRate    Float?   // Overtime rate per hour
+  overtimeAmount  Float?   // Overtime total amount
+  netSalary       Float    // Final salary after all calculations
+  status          String   // 'draft', 'processed', 'paid'
+  paymentDate     DateTime?
+  paymentMethod   String?  // 'bank_transfer', 'cash', 'check'
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
